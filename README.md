@@ -1,2 +1,2 @@
 # SQL-Scripts
-Usefule SQL Scripts
+Useful SQL Scripts
