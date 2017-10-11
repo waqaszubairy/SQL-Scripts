@@ -1,0 +1,32 @@
+
+WITH CTE_Jobs AS
+(
+Select 
+        h.job_id
+		,[Job Name] = j.name 
+      , [Job Description] = j.description
+      , [LastRunDate] = h.run_date 
+     , [LastRunTime] = h.run_time
+      , [JobStatus] = Case h.run_status
+          When 0 Then 'Failed'
+          When 1 Then 'Successful'
+          When 3 Then 'Cancelled'
+          When 4 Then 'In Progress'
+        End
+      ,[OrderOfRun] = Rank() Over(Partition By j.job_id Order By h.run_date Desc,h.run_time Desc)
+	  ,run_date
+	  ,run_time
+    From
+        msdb.dbo.sysjobhistory h
+      Left join msdb.dbo.sysjobs j On j.job_id = h.job_id
+    Where h.step_id=0 --only look @ Job Outcome step
+	and j.name in
+	(
+	'CI_Cube - CI_Cube_ETL - Master_ETL [ G2 ]',
+	'CI_Cube - CI_Cube_ETL - Master_ETL [ MT ]',
+	'CI_Cube - CI_Cube_ETL - Master_ETL [ Prop ]'
+	)
+)
+SELECT [Job Name],[JobStatus],run_date  FROM CTE_Jobs
+WHERE OrderOfRun=1
+Order By [Job Name] desc,Rank() Over(Partition By job_id Order By run_date Desc,run_time Desc) Asc
